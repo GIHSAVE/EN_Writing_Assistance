@@ -1,5 +1,5 @@
 # Thanawai Lertkiettikun 6740084422
-# Updated : 27/11/2024 1:40PM
+# Updated : 27/11/2024 3:20PM
 
 import streamlit as st
 import openai
@@ -18,6 +18,20 @@ if "js" not in st.session_state:
     st.session_state.js = None
 if "tableChanged" not in st.session_state:
     st.session_state.tableChanged = False
+if "chatGPTCall" not in st.session_state:
+    st.session_state.chatGPTCall = False
+
+#--------------------------------------------------------
+#Reset Old Data when putting new text
+def deleteData():
+    #if st.session_state.chatGPTCall:
+    st.session_state.js = None
+    st.session_state.tableChanged = False
+
+    session = ("question_num", "current_answer", "score", "already_answer", "past_answer", "choice_selected")
+    for key in session:
+        if key in st.session_state:
+            del st.session_state[key]
 
 #--------------------------------------------------------
 #Sidebar (API Key Input)
@@ -26,94 +40,130 @@ st.session_state.api_key = openai.OpenAI(api_key=api_key)
 
 #--------------------------------------------------------
 #Header
-st.header("PA4", divider=True)
+st.header("PA4 LLM Application", divider=True)
 
 #--------------------------------------------------------
 #Text Input
 st.title("English Writing Tutor")
 
 st.text("Correct your writing, Make some quizes, and Analyze your vocabulary range.")
+st.markdown(":red[(Please note that ChatGPT responses may vary and could be incorrect. Use caution and verify information from other sources.)]")
 with st.container():
-    if not st.session_state.user_text:
-        user_t = st.chat_input(placeholder="Enter your writing")
-        if user_t is not None and re.match(r"[A-z0-9-'\"]+", user_t):
-            st.session_state.user_text = user_t
-        else:
-            st.warning("Input English text.")
+    #if not st.session_state.user_text:
+    user_t = st.chat_input(placeholder="Enter your writing")
+    if user_t is not None and re.match(r"[A-z0-9-'\"]+", user_t):
+        st.session_state.user_text = user_t
+        st.session_state.chatGPTCall = False
+    elif user_t is not None and not re.match(r"[A-z0-9-'\"]+", user_t):
+        st.warning("Input English text.")
 
 #--------------------------------------------------------
 #Ask ChatGPT for Response
-if st.session_state.user_text and not st.session_state.js:
-    prompt = """
-My client want you to fix and teach their writing. Here is their writing:""" + " [" + st.session_state.user_text + "] " + """This is what you have to do:
-1. Error correction: Identify and correct grammatical errors, spelling mistakes, and unclear phrasing in the provided text. And make an explanation input to the json format "correction" for all fixes include grammar and vocabulary fix.
-2. Vocabulary enhancement: Suggest synonyms for words or phrases that could be improve. The original word will be taken from the fixed text. don't use the user wrong text one.
-3. Quiz creation: Create a fill-in-the-blank quiz. Each question should have one blank with four choices. The question is based on the grammatical errors or spelling mistakes identified in the first step to help the user understand their mistake in writing. the number of question is what the mistake are. If there are no errors or fixed points, create the question based on the suggested words or phrases from the second step. The number of questions is not limited to 3 questions as the example JSON file.
-4. CEFR level analysis: Classify words in the corrected text based on their CEFR level (A1, A2, B1, B2, C1, C2).
-The Example of the user text and json file : "A short story are a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained incidence or series of linked incidence, with the intent of evoking a single effect or mood. The short story are one of the oldest types of literaturer and have existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world. The modern short story was developed in the early 19th century."
-return as a JSON file. Format in the following JSON schema and based on the instructions above:
-{
-"fixed_text": "A short story is a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained incident or series of linked incidents, with the intent of evoking a single effect or mood. The short story is one of the oldest types of literature and has existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world. The modern short story was developed in the early 19th century.",
+try:
+    if st.session_state.user_text and not st.session_state.chatGPTCall:
+        prompt = """
+    My client want you to fix and teach their writing. Here is their writing:""" + " [" + st.session_state.user_text + "] " + """This is what you have to do:
+    1. Error correction: Identify and correct grammatical errors, spelling mistakes, and unclear phrasing in the provided text. And make an explanation input to the json format "correction" for all fixes include grammar and vocabulary fix.
+    2. Vocabulary enhancement: Suggest synonyms for words or phrases that could be improve. The original word will be taken from the fixed text. don't use the user wrong text one.
+    3. Quiz creation: Create a fill-in-the-blank quiz. Each question should have one blank with four choices. The question is based on the grammatical errors or spelling mistakes identified in the first step to help the user understand their mistake in writing. the number of question is what the mistake are. If there are no errors or fixed points, create the question based on the suggested words or phrases from the second step. The number of questions is not limited to 3 questions as the example JSON file.
+    4. CEFR level analysis: Classify words in the corrected text based on their CEFR level (A1, A2, B1, B2, C1, C2).
+    The Example of the user text and json file : "A short story are a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained incidence or series of linked incidence, with the intent of evoking a single effect or mood. The short story are one of the oldest types of literaturer and have existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world. The modern short story was developed in the early 19th century."
+    return as a JSON file. Format in the following JSON schema and based on the instructions above:
+    {
+    "fixed_text": "A short story is a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained incident or series of linked incidents, with the intent of evoking a single effect or mood. The short story is one of the oldest types of literature and has existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world. The modern short story was developed in the early 19th century.",
 
-"correction": {
-"incorrect_words": ["are", "incidence", "incidence", "literaturer"],
-"correct_words": ["is", "incident", "incidents", "literature"],
-"explanations": [
-    "'are' should be 'is' to match the singular subject 'short story.'",
-    "'incidence' should be 'incident' to maintain consistency in the text.",
-    "'incidence' should be 'incidents' to form a plural noun in the context.",
-    "'literaturer' is incorrect and should be 'literature.'"
-    ]
-},
-
-"suggestion": {
-    "original_words": ["focused", "incident", "linked", "literature"],
-    "suggested_words": [
-        ["centered", "concentrated", "directed"],
-        ["occasion", "event", "occurrence"],
-        ["connected", "related", "associated"],
-        ["writing", "works", "written works"]
-    ]
-},
-
-"quiz": {
-    "questions": [
-        "A short story is a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained ___ or series of linked incidents.",
-        "The modern short story was developed in the early ___ century.",
-        "The short story is one of the oldest types of ___ and has existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world.",
-        "The modern short story was developed in the early 19th ___."
-    ],
-"choices": [
-        ["incident", "events", "story", "plot"],
-        ["20th", "16th", "19th", "21st"],
-        ["stories", "narratives", "genres", "literature"],
-        ["century", "decade", "age", "era"]
-    ],
-"correct_answers": ["incident", "19th", "literature", "century"]
-},
-
-"words_range": {
-    "A1": ["is", "a", "of", "on", "and", "an", "to", "the", "it", "can"],
-    "A2": ["read", "single", "and", "self-contained", "oldest"],
-    "B1": ["focuses", "single", "linked", "effect", "mood"],
-    "B2": ["prose", "fiction", "developed"],
-    "C1": ["short", "story"],
-    "C2": ["literature"]
-}
-}
-"""
-    response = st.session_state.api_key.chat.completions.create(
-        model = "gpt-3.5-turbo",
-        response_format={"type": "json_object"},
-        messages = [
-            {"role": "system", "content": "You are an English language expert."},
-            {"role": "user", "content": prompt}
+    "correction": {
+    "incorrect_words": ["are", "incidence", "incidence", "literaturer"],
+    "correct_words": ["is", "incident", "incidents", "literature"],
+    "explanations": [
+        "'are' should be 'is' to match the singular subject 'short story.'",
+        "'incidence' should be 'incident' to maintain consistency in the text.",
+        "'incidence' should be 'incidents' to form a plural noun in the context.",
+        "'literaturer' is incorrect and should be 'literature.'"
         ]
-    )
-    result = response.choices[0].message.content
+    },
 
-    #Load ChatGPT Response json file into session state
-    st.session_state.js = json.loads(result)
+    "suggestion": {
+        "original_words": ["focused", "incident", "linked", "literature"],
+        "suggested_words": [
+            ["centered", "concentrated", "directed"],
+            ["occasion", "event", "occurrence"],
+            ["connected", "related", "associated"],
+            ["writing", "works", "written works"]
+        ]
+    },
+
+    "quiz": {
+        "questions": [
+            "A short story is a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained ___ or series of linked incidents.",
+            "The modern short story was developed in the early ___ century.",
+            "The short story is one of the oldest types of ___ and has existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world.",
+            "The modern short story was developed in the early 19th ___."
+        ],
+    "choices": [
+            ["incident", "events", "story", "plot"],
+            ["20th", "16th", "19th", "21st"],
+            ["stories", "narratives", "genres", "literature"],
+            ["century", "decade", "age", "era"]
+        ],
+    "correct_answers": ["incident", "19th", "literature", "century"]
+    },
+
+    "words_range": {
+        "A1": ["is", "a", "of", "on", "and", "an", "to", "the", "it", "can"],
+        "A2": ["read", "single", "and", "self-contained", "oldest"],
+        "B1": ["focuses", "single", "linked", "effect", "mood"],
+        "B2": ["prose", "fiction", "developed"],
+        "C1": ["short", "story"],
+        "C2": ["literature"]
+    }
+    }
+    """
+        deleteData()
+        response = st.session_state.api_key.chat.completions.create(
+            model = "gpt-3.5-turbo",
+            response_format={"type": "json_object"},
+            messages = [
+                {"role": "system", "content": "You are an English language expert."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        result = response.choices[0].message.content
+
+        #Load ChatGPT Response json file into session state
+        st.session_state.js = json.loads(result)
+
+        #To stop calling over and over again until the user input new text
+        st.session_state.chatGPTCall = True
+
+#Handling Error
+except openai.BadRequestError as e:
+  # Handle error 400
+  st.error(f"Error 400 BadRequestError: {e}")
+except openai.AuthenticationError as e:
+  # Handle error 401
+  st.error(f"Error 401 AuthenticationError: {e}")
+except openai.PermissionDeniedError as e:
+  # Handle error 403
+  st.error(f"Error 403 PermissionDeniedError: {e}")
+except openai.NotFoundError as e: 
+  # Handle error 404
+  st.error(f"Error 404 NotFoundError: {e}")
+except openai.UnprocessableEntityError as e:
+  # Handle error 422
+  st.error(f"Error 422 UnprocessableEntityError: {e}")
+except openai.RateLimitError as e:
+  # Handle error 429
+  st.error(f"Error 429 RateLimitError: {e}")
+except openai.InternalServerError as e:
+  # Handle error >=500
+  st.error(f"Error >=500 InternalServerError: {e}")
+except openai.APIConnectionError as e:
+  # Handle API connection error
+  st.error(f"API connection error: {e}")
+except openai.APIError as e:
+  #Handle API error here, e.g. retry or log
+  st.error(f"OpenAI API returned an API Error: {e}")
 
 #--------------------------------------------------------
 #Function (Error correction, Vocabulary suggestion)
@@ -162,12 +212,12 @@ def previous():
         st.session_state.current_answer = ""
 
 def next():
-    if st.session_state.question_num + 1 < len(question):
+    if st.session_state.question_num + 1 < len(st.session_state.js["quiz"]["questions"]):
         st.session_state.question_num += 1
         st.session_state.current_answer = ""
 
 def restart():
-    session = {"question_num": 0, "current_answer": "", "score": 0, "already_answer": [0 for i in range(len(question))], "past_answer": ["" for i in range(len(question))], "choice_selected": 1}
+    session = {"question_num": 0, "current_answer": "", "score": 0, "already_answer": [0 for i in range(len(st.session_state.js["quiz"]["questions"]))], "past_answer": ["" for i in range(len(st.session_state.js["quiz"]["questions"]))], "choice_selected": 1}
     for key, value in session.items():
         st.session_state[key] = value
 
@@ -196,22 +246,22 @@ if st.session_state.js:
 
         st.subheader("Corrected wrtting")
         st.markdown(highlight_string_at_index(text=str(st.session_state.js["fixed_text"]), hightlight_index_list=get_differ_index(st.session_state.user_text, str(st.session_state.js["fixed_text"])), type="correct"))
+        st.table(st.session_state.js["correction"]["explanations"])
 
         st.subheader("Suggested Synonym")
         st.dataframe(pd.DataFrame.from_dict(pd.DataFrame.from_dict(st.session_state.js["suggestion"])[["original_words", "suggested_words"]]), hide_index=True)
     
     #--------------------------------------------------------
     #Quiz Data
-    question = st.session_state.js["quiz"]["questions"]
     choices = st.session_state.js["quiz"]["choices"]
     answer_key = st.session_state.js["quiz"]["correct_answers"]
 
     #create session state for quiz
-    session = {"question_num": 0, "current_answer": "", "score": 0, "already_answer": [0 for i in range(len(question))], "past_answer": ["" for i in range(len(question))], "choice_selected": 1}
+    session = {"question_num": 0, "current_answer": "", "score": 0, "already_answer": [0 for i in range(len(st.session_state.js["quiz"]["questions"]))], "past_answer": ["" for i in range(len(st.session_state.js["quiz"]["questions"]))], "choice_selected": 1}
 
     for key, value in session.items():
         if key not in st.session_state:
-            st.session_state.setdefault(key, value)
+            st.session_state[key] = value
 
     #Button CSS
     st.markdown("""
@@ -225,15 +275,15 @@ if st.session_state.js:
     #--------------------------------------------------------
     #Quiz
     st.subheader("Quiz")
-    st.markdown(f"### Score : {st.session_state.score}/{len(question)}")
-    st.markdown(f"#### {str(st.session_state.question_num + 1)}. {question[st.session_state.question_num]}")
+    st.markdown(f"### Score : {st.session_state.score}/{len(st.session_state.js["quiz"]["questions"])}")
+    st.markdown(f"#### {str(st.session_state.question_num + 1)}. {st.session_state.js["quiz"]["questions"][st.session_state.question_num]}")
 
     isAnswer = st.session_state.already_answer[st.session_state.question_num]
 
     #Answer Button
     if not isAnswer:
         for choice in choices[st.session_state.question_num]:
-            if st.button(choice, use_container_width=True, disabled=isAnswer):
+            if st.button(choice, use_container_width=True, disabled=isAnswer, key=f"{st.session_state.question_num}{choice}"):
                 st.session_state.current_answer = choice
 
     if isAnswer:
@@ -273,13 +323,13 @@ if st.session_state.js:
         next_button = st.button(label="\>", on_click=next)
 
     #Restart button
-    if sum(st.session_state.already_answer) == len(question):
+    if sum(st.session_state.already_answer) == len(st.session_state.js["quiz"]["questions"]):
         st.button(label="Restart", on_click=restart)
 
     if not st.session_state.tableChanged:
         removeNan()
         st.session_state.tableChanged = True
-    
+
     #--------------------------------------------------------
     #Vocab Range Data
     vocab_range = st.session_state.js["words_range"]
