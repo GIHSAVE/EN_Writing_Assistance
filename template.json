@@ -1,0 +1,49 @@
+{
+	"fixed_text": "A short story is a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained incident or series of linked incidents, with the intent of evoking a single effect or mood. The short story is one of the oldest types of literature and has existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world. The modern short story was developed in the early 19th century.",
+
+	"correction": {
+	  "incorrect_words": ["are", "incidence", "incidence", "literaturer"],
+	  "correct_words": ["is", "incident", "incidents", "literature"],
+	  "explanations": [
+			"'are' should be 'is' to match the singular subject 'short story.'",
+			"'incidence' should be 'incident' to maintain consistency in the text.",
+			"'incidence' should be 'incidents' to form a plural noun in the context.",
+			"'literaturer' is incorrect and should be 'literature.'"
+	  ]
+	},
+
+	"suggestion": {
+	  "original_words": ["focused", "incident", "linked", "literature"],
+	  "suggested_words": [
+			["centered", "concentrated", "directed"],
+			["occasion", "event", "occurrence"],
+			["connected", "related", "associated"],
+			["writing", "works", "written works"]
+	  ]
+	},
+
+	"quiz": {
+	  "questions": [
+			"A short story is a piece of prose fiction. It can typically be read in a single sitting and focuses on a self-contained ___ or series of linked incidents.",
+			"The modern short story was developed in the early ___ century.",
+			"The short story is one of the oldest types of ___ and has existed in the form of legends, mythic tales, folk tales, fairy tales, tall tales, fables, and anecdotes in various ancient communities around the world.",
+			"The modern short story was developed in the early 19th ___."
+	  ],
+	  "choices": [
+			["incident", "events", "story", "plot"],
+			["20th", "16th", "19th", "21st"],
+			["stories", "narratives", "genres", "literature"],
+			["century", "decade", "age", "era"]
+	  ],
+	  "correct_answers": ["incident", "19th", "literature", "century"]
+	},
+
+	"words_range": {
+	  "A1": ["is", "a", "of", "on", "and", "an", "to", "the", "it", "can"],
+	  "A2": ["read", "single", "and", "self-contained", "oldest"],
+	  "B1": ["focuses", "single", "linked", "effect", "mood"],
+	  "B2": ["prose", "fiction", "developed"],
+	  "C1": ["short", "story"],
+	  "C2": ["literature"]
+	}
+}
